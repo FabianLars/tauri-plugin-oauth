@@ -8,5 +8,5 @@ rust-version = "1.57"
 exclude = ["/examples"]
 
 [dependencies]
-log = "0.4.16"
+log = "0.4.17"
 tauri = { version = "1.0.0-rc.8" }
