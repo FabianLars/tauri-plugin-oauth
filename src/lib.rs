@@ -68,7 +68,7 @@ fn handle_connection(
     response: Option<&'static str>,
     port: u16,
 ) -> Option<String> {
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
         log::error!("Error reading incoming connection: {}", io_err.to_string());
     };
