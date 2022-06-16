@@ -10,4 +10,4 @@ exclude = ["/examples"]
 [dependencies]
 httparse = "1.7.1"
 log = "0.4.17"
-tauri = { version = "1.0.0-rc.14" }
+tauri = { version = "1.0.0" }
