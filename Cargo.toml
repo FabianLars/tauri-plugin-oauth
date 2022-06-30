@@ -8,6 +8,6 @@ rust-version = "1.57"
 exclude = ["/examples"]
 
 [dependencies]
-httparse = "1.7.1"
-log = "0.4.17"
-tauri = { version = "1.0.1" }
+httparse = "1.7"
+log = "0.4"
+tauri = { version = "1.0" }
