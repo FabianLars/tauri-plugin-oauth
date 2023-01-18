@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     io::{Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     thread,
@@ -10,12 +11,6 @@ use tauri::{
 };
 
 const EXIT: [u8; 4] = [1, 3, 3, 7];
-
-/// Initializes the plugin.
-#[must_use]
-pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    Builder::new("oauth").build()
-}
 
 /// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
 ///
@@ -33,11 +28,30 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 /// # Panics
 ///
 /// The seperate server thread can panic if its unable to send the html response to the client. This may change after more real world testing.
-pub fn start<F: FnMut(String) + Send + 'static>(
-    response: Option<&'static str>,
+pub fn start<F: FnMut(String) + Send + 'static>(handler: F) -> Result<u16, std::io::Error> {
+    start_with_config(OauthConfig::default(), handler)
+}
+
+#[derive(Default, serde::Deserialize)]
+pub struct OauthConfig {
+    pub ports: Option<Vec<u16>>,
+    pub response: Option<Cow<'static, str>>,
+}
+
+pub fn start_with_config<F: FnMut(String) + Send + 'static>(
+    config: OauthConfig,
     mut handler: F,
 ) -> Result<u16, std::io::Error> {
-    let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
+    let listener = match config.ports {
+        Some(ports) => TcpListener::bind(
+            ports
+                .iter()
+                .map(|p| SocketAddr::from(([127, 0, 0, 1], *p)))
+                .collect::<Vec<SocketAddr>>()
+                .as_slice(),
+        ),
+        None => TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0))),
+    }?;
 
     let port = listener.local_addr()?.port();
 
@@ -45,7 +59,7 @@ pub fn start<F: FnMut(String) + Send + 'static>(
         for conn in listener.incoming() {
             match conn {
                 Ok(conn) => {
-                    if let Some(url) = handle_connection(conn, response, port) {
+                    if let Some(url) = handle_connection(conn, config.response.as_deref(), port) {
                         // Using an empty string to communicate that a shutdown was requested.
                         if !url.is_empty() {
                             handler(url);
@@ -60,14 +74,11 @@ pub fn start<F: FnMut(String) + Send + 'static>(
             }
         }
     });
+
     Ok(port)
 }
 
-fn handle_connection(
-    mut conn: TcpStream,
-    response: Option<&'static str>,
-    port: u16,
-) -> Option<String> {
+fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
         log::error!("Error reading incoming connection: {}", io_err.to_string());

@@ -12,3 +12,4 @@ httparse = "1"
 log = "0.4"
 url = "2"
 tauri = { version = "1" }
+serde = "1"
