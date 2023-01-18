@@ -168,3 +168,53 @@ pub fn cancel(port: u16) -> Result<(), std::io::Error> {
 
     Ok(())
 }
+
+mod plugin_impl {
+    use tauri::{Manager, Runtime, Window};
+
+    #[tauri::command]
+    pub(crate) fn start<R: Runtime>(
+        window: Window<R>,
+        config: Option<super::OauthConfig>,
+    ) -> Result<u16, String> {
+        let mut config = config.unwrap_or_default();
+        if config.response.is_none() {
+            config.response = window
+                .config()
+                .plugins
+                .0
+                .get("oauth")
+                .map(|v| v.as_str().unwrap().to_string().into());
+        }
+
+        crate::start_with_config(config, move |url| match url::Url::parse(&url) {
+            Ok(_) => {
+                if let Err(emit_err) = window.emit("oauth://url", url) {
+                    log::error!("Error emitting oauth://url event: {}", emit_err)
+                };
+            }
+            Err(err) => {
+                if let Err(emit_err) = window.emit("oauth://invalid-url", err.to_string()) {
+                    log::error!("Error emitting oauth://invalid-url event: {}", emit_err)
+                };
+            }
+        })
+        .map_err(|err| err.to_string())
+    }
+
+    #[tauri::command]
+    pub(crate) fn cancel(port: u16) -> Result<(), String> {
+        crate::cancel(port).map_err(|err| err.to_string())
+    }
+}
+
+/// Initializes the plugin.
+#[must_use]
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
+    Builder::new("oauth")
+        .invoke_handler(tauri::generate_handler![
+            plugin_impl::start,
+            plugin_impl::cancel
+        ])
+        .build()
+}
