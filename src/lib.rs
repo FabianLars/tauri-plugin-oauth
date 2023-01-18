@@ -112,7 +112,15 @@ fn handle_connection(
     );
     let response = match response {
         Some(s) if s.contains("<head>") => s.replace("<head>", &format!("<head>{}", script)),
-        Some(s) => s.replace("<body>", &format!("<head>{}</head><body>", script)),
+        Some(s) if s.contains("<body>") => {
+            s.replace("<body>", &format!("<head>{}</head><body>", script))
+        }
+        Some(s) => {
+            log::warn!(
+                "`response` does not contain a body or head element. Prepending a head element..."
+            );
+            format!("<head>{}</head>{}", script, s)
+        }
         None => format!(
             "<html><head>{}</head><body>Please return to the app.</body></html>",
             script
