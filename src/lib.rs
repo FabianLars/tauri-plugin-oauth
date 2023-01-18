@@ -18,7 +18,6 @@ const EXIT: [u8; 4] = [1, 3, 3, 7];
 ///
 /// # Arguments
 ///
-/// * `response` - Optional static html string send to the user after being redirected. Keep it self-contained and as small as possible. Default: `"<html><body>Please return to the app.</body></html>"`.
 /// * `handler` - Closure which will be executed on a successful connection. It receives the full URL as a String.
 ///
 /// # Errors
@@ -32,12 +31,37 @@ pub fn start<F: FnMut(String) + Send + 'static>(handler: F) -> Result<u16, std::
     start_with_config(OauthConfig::default(), handler)
 }
 
+/// The optional server config.
 #[derive(Default, serde::Deserialize)]
 pub struct OauthConfig {
+    /// An array of hard-coded ports the server should try to bind to.
+    /// This should only be used if your oauth provider does not accept wildcard localhost addresses.
+    ///
+    /// Default: Asks the system for a free port.
     pub ports: Option<Vec<u16>>,
+    /// Optional static html string send to the user after being redirected.
+    /// Keep it self-contained and as small as possible.
+    ///
+    /// Default: `"<html><body>Please return to the app.</body></html>"`.
     pub response: Option<Cow<'static, str>>,
 }
 
+/// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
+///
+/// Because of the unprotected localhost port, you _must_ verify the URL in the handler function.
+///
+/// # Arguments
+///
+/// * `config` - Configuration the server should use, see [`OauthConfig.]
+/// * `handler` - Closure which will be executed on a successful connection. It receives the full URL as a String.
+///
+/// # Errors
+///
+/// - Returns `std::io::Error` if the server creation fails.
+///
+/// # Panics
+///
+/// The seperate server thread can panic if its unable to send the html response to the client. This may change after more real world testing.
 pub fn start_with_config<F: FnMut(String) + Send + 'static>(
     config: OauthConfig,
     mut handler: F,
@@ -208,7 +232,11 @@ mod plugin_impl {
     }
 }
 
-/// Initializes the plugin.
+/// Initializes the tauri plugin.
+/// Only use this if you need the JavaScript APIs.
+///
+/// Note for the `start()` command: If `response` is not provided it will fall back to the config
+/// in tauri.conf.json if set and will fall back to the library's default, see [`OauthConfig`].
 #[must_use]
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("oauth")
