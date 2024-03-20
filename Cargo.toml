@@ -4,15 +4,20 @@ version = "0.0.0-alpha.0"
 authors = ["FabianLars <fabianlars@fabianlars.de>"]
 description = "A Tauri plugin for spawning a localhost server. Needed for some oauth flows (Login with X)."
 edition = "2021"
-rust-version = "1.64"
+rust-version = "1.70"
 license = "MIT OR Apache-2.0"
-include = ["src/**", "Cargo.toml", "LICENSE_*"]
+exclude = [".github/", "examples/", "renovate.json", ".gitignore"]
 readme = "README.md"
 repository = "https://github.com/FabianLars/tauri-plugin-oauth"
+links = "tauri-plugin-oauth"
 
 [dependencies]
+tauri = { version = "2.0.0-beta.12" }
 httparse = "1"
 log = "0.4"
 serde = "1"
-tauri = "2.0.0-alpha.16"
 url = "2"
+thiserror = "1.0"
+
+[build-dependencies]
+tauri-plugin = { version = "2.0.0-beta.10", features = ["build"] }
