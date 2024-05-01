@@ -12,7 +12,7 @@ repository = "https://github.com/FabianLars/tauri-plugin-oauth"
 
 [dependencies]
 httparse = "1"
-log = "0.4"
+log = "0.4.21"
 serde = "1"
 tauri = "1"
 url = "2"
