@@ -1,7 +1,5 @@
 # Tauri Plugin OAuth
 
-![WIP Badge](https://img.shields.io/badge/status-WIP-yellow)
-
 A minimalistic Rust library and Tauri plugin for handling browser-based OAuth flows in desktop
 applications. This plugin spawns a temporary localhost server to capture OAuth redirects, solving
 the challenge of using OAuth with desktop apps.
@@ -24,15 +22,15 @@ redirect URLs. This plugin provides a solution by:
 ```toml
 # Cargo.toml
 [dependencies]
-tauri-plugin-oauth = "2.0.0-rc.0"
+tauri-plugin-oauth = "2"
 ```
 
 For Tauri projects using npm or yarn:
 
 ```bash
-npm install @fabianlars/tauri-plugin-oauth@2.0.0-rc.0
+npm install @fabianlars/tauri-plugin-oauth@2
 # or
-yarn add @fabianlars/tauri-plugin-oauth@2.0.0-rc.0
+yarn add @fabianlars/tauri-plugin-oauth@2
 ```
 
 ## Usage
