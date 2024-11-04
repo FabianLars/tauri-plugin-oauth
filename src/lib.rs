@@ -111,7 +111,7 @@ fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> 
         return Some(String::new());
     }
 
-    let mut headers = [httparse::EMPTY_HEADER; 16];
+    let mut headers = [httparse::EMPTY_HEADER; 32];
     let mut request = httparse::Request::new(&mut headers);
     request.parse(&buffer).ok()?;
 
