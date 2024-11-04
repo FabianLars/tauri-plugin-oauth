@@ -295,32 +295,24 @@
       "type": "string",
       "oneOf": [
         {
-          "description": "allow-cancel -> Enables the cancel command without any pre-configured scope.",
+          "description": "Enables the cancel command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "allow-cancel"
-          ]
+          "const": "allow-cancel"
         },
         {
-          "description": "deny-cancel -> Denies the cancel command without any pre-configured scope.",
+          "description": "Denies the cancel command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "deny-cancel"
-          ]
+          "const": "deny-cancel"
         },
         {
-          "description": "allow-start -> Enables the start command without any pre-configured scope.",
+          "description": "Enables the start command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "allow-start"
-          ]
+          "const": "allow-start"
         },
         {
-          "description": "deny-start -> Denies the start command without any pre-configured scope.",
+          "description": "Denies the start command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "deny-start"
-          ]
+          "const": "deny-start"
         }
       ]
     }
