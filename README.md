@@ -66,7 +66,12 @@ pub fn run() {
 ### TypeScript
 
 ```typescript
-import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
+import {
+  start,
+  cancel,
+  onUrl,
+  onInvalidUrl,
+} from "@fabianlars/tauri-plugin-oauth";
 
 async function startOAuthFlow() {
   try {
@@ -75,15 +80,14 @@ async function startOAuthFlow() {
 
     // Set up listeners for OAuth results
     await onUrl((url) => {
-      console.log('Received OAuth URL:', url);
+      console.log("Received OAuth URL:", url);
       // Handle the OAuth redirect
     });
 
     // Initiate your OAuth flow here
     // ...
-
   } catch (error) {
-    console.error('Error starting OAuth server:', error);
+    console.error("Error starting OAuth server:", error);
   }
 }
 
@@ -91,9 +95,9 @@ async function startOAuthFlow() {
 async function stopOAuthServer() {
   try {
     await cancel(port);
-    console.log('OAuth server stopped');
+    console.log("OAuth server stopped");
   } catch (error) {
-    console.error('Error stopping OAuth server:', error);
+    console.error("Error stopping OAuth server:", error);
   }
 }
 ```
@@ -102,12 +106,15 @@ async function stopOAuthServer() {
 
 You can configure the plugin behavior using the `OauthConfig` struct:
 
+If you set the `redirect_uri` field, the plugin will redirect to the provided URL after the OAuth process is complete instead of returning the `response` content.
+
 ```rust
 use tauri_plugin_oauth::OauthConfig;
 
 let config = OauthConfig {
     ports: Some(vec![8000, 8001, 8002]),
     response: Some("OAuth process completed. You can close this window.".into()),
+    redirect_uri: Some("http://tauri.localhost/homepage".into()),
 };
 
 start_with_config(config, |url| {
@@ -125,7 +132,7 @@ start_with_config(config, |url| {
 
 ## Contributing
 
-Contributions are  always welcome! Please feel free to submit a Pull Request.
+Contributions are always welcome! Please feel free to submit a Pull Request.
 
 ## License
 
