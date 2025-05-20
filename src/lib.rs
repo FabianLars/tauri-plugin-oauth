@@ -96,7 +96,7 @@ pub fn start_with_redirect<F: FnMut(String) + Send + 'static>(
             match conn {
                 Ok(conn) => {
                     if let Some(url) =
-                        handle_connection_with_redirect(conn, config.redirect_uri.as_ref())
+                        handle_connection_with_redirect(conn, config.redirect_uri.as_ref(), port)
                     {
                         // Using an empty string to communicate that a shutdown was requested.
                         if !url.is_empty() {
@@ -116,7 +116,11 @@ pub fn start_with_redirect<F: FnMut(String) + Send + 'static>(
     Ok(port)
 }
 
-fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> Option<String> {
+fn handle_connection_with_redirect(
+    mut conn: TcpStream,
+    redirect_uri: &str,
+    port: u16,
+) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
         log::error!("Error reading incoming connection: {}", io_err.to_string());
@@ -131,21 +135,6 @@ fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> O
 
     let path = request.path.unwrap_or_default();
 
-    if path == "/exit" {
-        return Some(String::new());
-    };
-
-    for header in &headers {
-        if header.name == "Full-Url" {
-            return Some(String::from_utf8_lossy(header.value).to_string());
-        }
-    }
-    if path == "/cb" {
-        log::error!(
-            "Client fetched callback path but the request didn't contain the expected header."
-        );
-    }
-
     // TODO: Test if unwrapping here is safe (enough).
     conn.write_all(
         format!(
@@ -156,8 +145,8 @@ fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> O
     )
     .unwrap();
     conn.flush().unwrap();
-
-    None
+    let url = format!("http://{}:{}{}", "127.0.0.1", port, path);
+    return Some(url);
 }
 
 /// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
