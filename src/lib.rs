@@ -44,79 +44,19 @@ pub struct OauthConfig {
     ///
     /// Default: `"<html><body>Please return to the app.</body></html>"`.
     pub response: Option<Cow<'static, str>>,
-}
 
-/// The optional server config.
-#[derive(Default, serde::Deserialize)]
-pub struct OauthRedirectConfig {
-    /// An array of hard-coded ports the server should try to bind to.
-    /// This should only be used if your oauth provider does not accept wildcard localhost addresses.
+    /// The redirect uri to use for the oauth provider.
+    /// If this argument is provided, the server will redirect to the provided uri instead of return a htpp 200 response.
     ///
-    /// Default: Asks the system for a free port.
-    pub ports: Option<Vec<u16>>,
-    /// The redirect url to use for the oauth provider.
-    pub redirect_uri: Cow<'static, str>,
+    /// Default: None
+    pub redirect_uri: Option<Cow<'static, str>>,
 }
 
-/// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
-///
-/// Because of the unprotected localhost port, you _must_ verify the URL in the handler function.
-///
-/// # Arguments
-///
-/// * `config` - Configuration the server should use, see [`OauthConfig.]
-/// * `handler` - Closure which will be executed on a successful connection. It receives the full URL as a String.
-///
-/// # Errors
-///
-/// - Returns `std::io::Error` if the server creation fails.
-///
-/// # Panics
-///
-/// The seperate server thread can panic if its unable to send the html response to the client. This may change after more real world testing.
-pub fn start_with_redirect<F: FnMut(String) + Send + 'static>(
-    config: OauthRedirectConfig,
-    mut handler: F,
-) -> Result<u16, std::io::Error> {
-    let listener = match config.ports {
-        Some(ports) => TcpListener::bind(
-            ports
-                .iter()
-                .map(|p| SocketAddr::from(([127, 0, 0, 1], *p)))
-                .collect::<Vec<SocketAddr>>()
-                .as_slice(),
-        ),
-        None => TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0))),
-    }?;
-
-    let port = listener.local_addr()?.port();
-
-    thread::spawn(move || {
-        for conn in listener.incoming() {
-            match conn {
-                Ok(conn) => {
-                    if let Some(url) =
-                        handle_connection_with_redirect(conn, config.redirect_uri.as_ref())
-                    {
-                        // Using an empty string to communicate that a shutdown was requested.
-                        if !url.is_empty() {
-                            handler(url);
-                        }
-                        // TODO: Check if exiting here is always okay.
-                        break;
-                    }
-                }
-                Err(err) => {
-                    log::error!("Error reading incoming connection: {}", err.to_string());
-                }
-            }
-        }
-    });
-
-    Ok(port)
-}
-
-fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> Option<String> {
+fn handle_connection_with_redirect(
+    mut conn: TcpStream,
+    redirect_uri: &str,
+    port: u16,
+) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
         log::error!("Error reading incoming connection: {}", io_err.to_string());
@@ -131,21 +71,6 @@ fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> O
 
     let path = request.path.unwrap_or_default();
 
-    if path == "/exit" {
-        return Some(String::new());
-    };
-
-    for header in &headers {
-        if header.name == "Full-Url" {
-            return Some(String::from_utf8_lossy(header.value).to_string());
-        }
-    }
-    if path == "/cb" {
-        log::error!(
-            "Client fetched callback path but the request didn't contain the expected header."
-        );
-    }
-
     // TODO: Test if unwrapping here is safe (enough).
     conn.write_all(
         format!(
@@ -156,8 +81,8 @@ fn handle_connection_with_redirect(mut conn: TcpStream, redirect_uri: &str) -> O
     )
     .unwrap();
     conn.flush().unwrap();
-
-    None
+    let url = format!("http://{}:{}{}", "127.0.0.1", port, path);
+    return Some(url);
 }
 
 /// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
@@ -197,7 +122,20 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
         for conn in listener.incoming() {
             match conn {
                 Ok(conn) => {
-                    if let Some(url) = handle_connection(conn, config.response.as_deref(), port) {
+                    if let Some(redirect_uri) = &config.redirect_uri {
+                        if let Some(url) =
+                            handle_connection_with_redirect(conn, redirect_uri.as_ref(), port)
+                        {
+                            // Using an empty string to communicate that a shutdown was requested.
+                            if !url.is_empty() {
+                                handler(url);
+                            }
+                            // TODO: Check if exiting here is always okay.
+                            break;
+                        }
+                    } else if let Some(url) =
+                        handle_connection(conn, config.response.as_deref(), port)
+                    {
                         // Using an empty string to communicate that a shutdown was requested.
                         if !url.is_empty() {
                             handler(url);
