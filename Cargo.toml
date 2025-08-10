@@ -17,7 +17,7 @@ httparse = "1"
 log = "0.4"
 serde = "1"
 url = "2"
-thiserror = "1.0"
+thiserror = "2.0"
 
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }
