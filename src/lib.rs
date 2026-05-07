@@ -162,17 +162,19 @@ fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> 
         ),
     };
 
-    // TODO: Test if unwrapping here is safe (enough).
-    conn.write_all(
-        format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            response.len(),
-            response
-        )
-        .as_bytes(),
-    )
-    .unwrap();
-    conn.flush().unwrap();
+    let payload = format!(
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+        response.len(),
+        response
+    );
+    if let Err(e) = conn.write_all(payload.as_bytes()) {
+        log::error!("Failed to write OAuth callback response: {}", e);
+        return None;
+    }
+    if let Err(e) = conn.flush() {
+        log::error!("Failed to flush OAuth callback response: {}", e);
+        return None;
+    }
 
     None
 }
