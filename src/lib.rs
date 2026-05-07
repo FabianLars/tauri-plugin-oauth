@@ -93,7 +93,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
                     }
                 }
                 Err(err) => {
-                    log::error!("Error reading incoming connection: {}", err.to_string());
+                    log::error!("Error reading incoming connection: {}", err);
                 }
             }
         }
@@ -105,7 +105,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
 fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
-        log::error!("Error reading incoming connection: {}", io_err.to_string());
+        log::error!("Error reading incoming connection: {}", io_err);
     };
     if buffer[..4] == EXIT {
         return Some(String::new());
