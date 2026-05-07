@@ -13,6 +13,7 @@ on:
 jobs:
   clippy:
     strategy:
+      fail-fast: false
       matrix:
         platform: [macos-latest, ubuntu-latest, windows-latest]
 
@@ -21,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt install libwebkit2gtk-4.1-dev
+      - run: sudo apt update && sudo apt install libwebkit2gtk-4.1-dev
         if: matrix.platform == 'ubuntu-latest'
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --all-targets --all-features -- -D warnings
