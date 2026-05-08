@@ -106,23 +106,41 @@ async function stopOAuthServer() {
 
 You can configure the plugin behavior using the `OauthConfig` struct:
 
-If you set the `redirect_uri` field, the plugin will redirect to the provided URL after the OAuth process is complete instead of returning the `response` content.
-
 ```rust
 use tauri_plugin_oauth::OauthConfig;
 
 let config = OauthConfig {
     ports: Some(vec![8000, 8001, 8002]),
     response: Some("OAuth process completed. You can close this window.".into()),
-    redirect_uri: Some("http://tauri.localhost/homepage".into()),
+    ..Default::default()
 };
 
 start_with_config(config, |url| {
     // Handle OAuth URL
 })
-.await
 .expect("Failed to start OAuth server");
 ```
+
+### Redirecting the browser after the callback
+
+If you set the `redirect_uri` field, the plugin will respond to the OAuth callback with a
+`302 Found` to that URL instead of serving an HTML response. This is useful when you want the
+browser to land on a real page of your app (e.g. a Tauri window URL) once the provider has hit
+the localhost server.
+
+```rust
+let config = OauthConfig {
+    redirect_uri: Some("http://tauri.localhost/oauth/done".into()),
+    ..Default::default()
+};
+```
+
+> **Note:** When `redirect_uri` is set, the handler closure receives the localhost URL the
+> provider hit (e.g. `http://127.0.0.1:<port>/?code=...&state=...`) — **not** the full URL with
+> the fragment (`#...`) that only the browser sees. If your OAuth flow returns the token in a
+> URL fragment (implicit flow), parse `window.location` on the redirected page and forward the
+> result back to your app yourself; the default (no `redirect_uri`) behavior uses an inline
+> script that already does this for you.
 
 ## Security Considerations
 
