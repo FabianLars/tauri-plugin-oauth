@@ -145,7 +145,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
                     }
                 }
                 Err(err) => {
-                    log::error!("Error reading incoming connection: {}", err.to_string());
+                    log::error!("Error reading incoming connection: {}", err);
                 }
             }
         }
@@ -157,7 +157,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
 fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
-        log::error!("Error reading incoming connection: {}", io_err.to_string());
+        log::error!("Error reading incoming connection: {}", io_err);
     };
     if buffer[..4] == EXIT {
         return Some(String::new());
@@ -214,17 +214,19 @@ fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> 
         ),
     };
 
-    // TODO: Test if unwrapping here is safe (enough).
-    conn.write_all(
-        format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            response.len(),
-            response
-        )
-        .as_bytes(),
-    )
-    .unwrap();
-    conn.flush().unwrap();
+    let payload = format!(
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+        response.len(),
+        response
+    );
+    if let Err(e) = conn.write_all(payload.as_bytes()) {
+        log::error!("Failed to write OAuth callback response: {}", e);
+        return None;
+    }
+    if let Err(e) = conn.flush() {
+        log::error!("Failed to flush OAuth callback response: {}", e);
+        return None;
+    }
 
     None
 }

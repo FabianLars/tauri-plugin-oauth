@@ -25,18 +25,18 @@
     "pretest": "pnpm build"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.3"
+    "@tauri-apps/api": "^2.11.0"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^4.24.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^4.60.3",
     "tslib": "^2.8.1",
-    "typescript": "^5.6.3"
+    "typescript": "^6.0.3"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/FabianLars/tauri-plugin-oauth"
   },
   "license": "MIT OR Apache-2.0",
-  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee"
+  "packageManager": "pnpm@10.33.4"
 }
