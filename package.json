@@ -1,6 +1,6 @@
 {
   "name": "@fabianlars/tauri-plugin-oauth",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "authors": [
     "FabianLars <fabianlars@fabianlars.de>",
     "Cuervolu <cuervolu@protonmail.com>"
