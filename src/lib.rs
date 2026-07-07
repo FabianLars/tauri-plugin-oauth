@@ -44,6 +44,18 @@ pub struct OauthConfig {
     ///
     /// Default: `"<html><body>Please return to the app.</body></html>"`.
     pub response: Option<Cow<'static, str>>,
+
+    /// Optional URL the server should redirect the browser to after receiving the OAuth callback,
+    /// instead of returning an HTML response with an inline script.
+    ///
+    /// When set, the handler receives the URL the OAuth provider hit on the localhost server
+    /// (e.g. `http://127.0.0.1:<port>/?code=...&state=...`) — it does **not** receive the
+    /// fragment portion (`#...`) that only the browser sees. If your OAuth provider returns the
+    /// token in a fragment (implicit flow), parse `window.location` on the redirected page
+    /// yourself and pass the result back to your app.
+    ///
+    /// Default: `None`.
+    pub redirect_uri: Option<Cow<'static, str>>,
 }
 
 /// Starts the localhost (using 127.0.0.1) server. Returns the port its listening on.
@@ -66,7 +78,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
     config: OauthConfig,
     mut handler: F,
 ) -> Result<u16, std::io::Error> {
-    let listener = match config.ports {
+    let listener = match &config.ports {
         Some(ports) => TcpListener::bind(
             ports
                 .iter()
@@ -83,7 +95,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
         for conn in listener.incoming() {
             match conn {
                 Ok(conn) => {
-                    if let Some(url) = handle_connection(conn, config.response.as_deref(), port) {
+                    if let Some(url) = handle_connection(conn, &config, port) {
                         // Using an empty string to communicate that a shutdown was requested.
                         if !url.is_empty() {
                             handler(url);
@@ -102,7 +114,7 @@ pub fn start_with_config<F: FnMut(String) + Send + 'static>(
     Ok(port)
 }
 
-fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> Option<String> {
+fn handle_connection(mut conn: TcpStream, config: &OauthConfig, port: u16) -> Option<String> {
     let mut buffer = [0; 4048];
     if let Err(io_err) = conn.read(&mut buffer) {
         log::error!("Error reading incoming connection: {}", io_err);
@@ -120,6 +132,25 @@ fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> 
     if path == "/exit" {
         return Some(String::new());
     };
+
+    // If a `redirect_uri` is configured, send a 302 to the provided URL and pass back the
+    // localhost URL (path + query) so the caller can extract the OAuth params server-side.
+    // Note: the URL fragment (`#...`) is browser-only and will not be visible here.
+    if let Some(redirect_uri) = &config.redirect_uri {
+        let payload = format!(
+            "HTTP/1.1 302 Found\r\nLocation: {}\r\nContent-Length: 0\r\n\r\n",
+            redirect_uri
+        );
+        if let Err(e) = conn.write_all(payload.as_bytes()) {
+            log::error!("Failed to write OAuth redirect response: {}", e);
+            return None;
+        }
+        if let Err(e) = conn.flush() {
+            log::error!("Failed to flush OAuth redirect response: {}", e);
+            return None;
+        }
+        return Some(format!("http://127.0.0.1:{}{}", port, path));
+    }
 
     let mut is_localhost = false;
 
@@ -145,7 +176,7 @@ fn handle_connection(mut conn: TcpStream, response: Option<&str>, port: u16) -> 
         },
         port
     );
-    let response = match response {
+    let response = match config.response.as_deref() {
         Some(s) if s.contains("<head>") => s.replace("<head>", &format!("<head>{}", script)),
         Some(s) if s.contains("<body>") => {
             s.replace("<body>", &format!("<head>{}</head><body>", script))

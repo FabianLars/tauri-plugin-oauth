@@ -49,7 +49,7 @@
           "minimum": 1.0
         },
         "description": {
-          "description": "Human-readable description of what the permission does. Tauri convention is to use <h4> headings in markdown content for Tauri documentation generation purposes.",
+          "description": "Human-readable description of what the permission does. Tauri convention is to use `<h4>` headings in markdown content for Tauri documentation generation purposes.",
           "type": [
             "string",
             "null"
@@ -111,7 +111,7 @@
           "type": "string"
         },
         "description": {
-          "description": "Human-readable description of what the permission does. Tauri internal convention is to use <h4> headings in markdown content for Tauri documentation generation purposes.",
+          "description": "Human-readable description of what the permission does. Tauri internal convention is to use `<h4>` headings in markdown content for Tauri documentation generation purposes.",
           "type": [
             "string",
             "null"
@@ -297,22 +297,26 @@
         {
           "description": "Enables the cancel command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-cancel"
+          "const": "allow-cancel",
+          "markdownDescription": "Enables the cancel command without any pre-configured scope."
         },
         {
           "description": "Denies the cancel command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-cancel"
+          "const": "deny-cancel",
+          "markdownDescription": "Denies the cancel command without any pre-configured scope."
         },
         {
           "description": "Enables the start command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-start"
+          "const": "allow-start",
+          "markdownDescription": "Enables the start command without any pre-configured scope."
         },
         {
           "description": "Denies the start command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-start"
+          "const": "deny-start",
+          "markdownDescription": "Denies the start command without any pre-configured scope."
         }
       ]
     }
